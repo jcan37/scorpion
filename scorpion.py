@@ -5,10 +5,13 @@ import time
 import threading
 import logging
 
-THRESHOLD = 20
-TIME_PER_SAMPLE = 0.1
+THRESHOLD = 10
+TIME_PER_SAMPLE = 0.01
 STARTING_WEIGHT = 1.1
 SAMPLE_WEIGHT = 0.125
+
+SOUND_RATE = 34300
+SOUND_CALIBRATION = 0.375
 
 LED = 22
 TRIG = 23
@@ -38,6 +41,7 @@ def object_detector():
         else:
             turn_off_led()
         time.sleep(TIME_PER_SAMPLE)
+    turn_off_led()
     GPIO.cleanup()
 
 def sample_distance():
@@ -54,15 +58,15 @@ def sample_distance():
     pulse_end = time.time()
 
     pulse_duration = pulse_end - pulse_start
-    distance = pulse_duration * 17150
+    distance = pulse_duration * SOUND_RATE * SOUND_CALIBRATION
+    # less cpu intensive!
+    # distance = pulse_duration << 11
     return distance
 
 def turn_on_led():
-    logging.debug('LED on')
     GPIO.output(LED, GPIO.HIGH)
 
 def turn_off_led():
-    logging.debug('LED off')
     GPIO.output(LED, GPIO.LOW)
 
 if __name__ == '__main__':
@@ -72,6 +76,6 @@ if __name__ == '__main__':
     while True:
         cin = raw_input('> ')
         cin = cin.lower()
-        if cin == 'exit' || cin == 'quit' || cin == 'q':
+        if cin == 'exit' or cin == 'quit' or cin == 'q':
             running = False
             break
