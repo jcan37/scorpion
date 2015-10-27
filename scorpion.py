@@ -7,12 +7,16 @@ import logging
 
 THRESHOLD = 20
 TIME_PER_SAMPLE = 0.1
+STARTING_WEIGHT = 1.1
+SAMPLE_WEIGHT = 0.125
 
 LED = 22
 TRIG = 23
 ECHO = 24
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+running = True
+logging.basicConfig(level=logging.DEBUG, 
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 def gpio_setup():
     GPIO.setmode(GPIO.BCM)
@@ -25,8 +29,10 @@ def gpio_setup():
 def object_detector():
     logging.debug('Spawning object detector...')
     gpio_setup()
-    while True:
-        distance = sample_distance()
+    distance = STARTING_WEIGHT * THRESHOLD
+    while running:
+        distance = SAMPLE_WEIGHT * sample_distance() + \
+                   (1 - SAMPLE_WEIGHT) * distance
         if distance < THRESHOLD:
             turn_on_led()
         else:
@@ -52,9 +58,11 @@ def sample_distance():
     return distance
 
 def turn_on_led():
+    logging.debug('LED on')
     GPIO.output(LED, GPIO.HIGH)
 
 def turn_off_led():
+    logging.debug('LED off')
     GPIO.output(LED, GPIO.LOW)
 
 if __name__ == '__main__':
@@ -62,4 +70,8 @@ if __name__ == '__main__':
     object_detector_thread.setDaemon(True)
     object_detector_thread.start()
     while True:
-        time.sleep(1)
+        cin = raw_input('> ')
+        cin = cin.lower()
+        if cin == 'exit' || cin == 'quit' || cin == 'q':
+            running = False
+            break
